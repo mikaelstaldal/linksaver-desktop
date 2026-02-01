@@ -129,13 +129,22 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 		textVBox.Append(urlLabel)
 	}
 
+	if link.Description != "" {
+		descriptionLabel := gtk.NewLabel(link.Description)
+		descriptionLabel.SetHAlign(gtk.AlignStart)
+		descriptionLabel.SetWrap(true)
+		textVBox.Append(descriptionLabel)
+	}
+
 	editButton := gtk.NewButtonWithLabel("Edit")
+	editButton.SetVAlign(gtk.AlignCenter)
 	editButton.ConnectClicked(func() {
 		showEditDialog(parent, link, onUpdate)
 	})
 	row.Append(editButton)
 
 	deleteButton := gtk.NewButtonWithLabel("Delete")
+	deleteButton.SetVAlign(gtk.AlignCenter)
 	deleteButton.ConnectClicked(func() {
 		if err := client.DeleteItem(strconv.FormatInt(link.ID, 10)); err != nil {
 			log.Printf("Error deleting item: %v\n", err)
