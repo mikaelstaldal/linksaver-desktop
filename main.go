@@ -46,8 +46,10 @@ func activate(app *gtk.Application) {
 
 	addLinkButton := gtk.NewButtonWithLabel("Add Link")
 	addNoteButton := gtk.NewButtonWithLabel("Add Note")
+	refreshButton := gtk.NewButtonWithLabel("Refresh")
 	headerBox.Append(addLinkButton)
 	headerBox.Append(addNoteButton)
+	headerBox.Append(refreshButton)
 
 	// Scrollable list area
 	scrolled := gtk.NewScrolledWindow()
@@ -89,6 +91,7 @@ func activate(app *gtk.Application) {
 	addNoteButton.ConnectClicked(func() {
 		addNoteDialog(&window.Window, refreshList)
 	})
+	refreshButton.ConnectClicked(refreshList)
 
 	refreshList()
 	window.Show()
