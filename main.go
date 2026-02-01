@@ -209,15 +209,24 @@ func addNoteDialog(parent *gtk.Window, onSuccess func()) {
 	grid.Attach(titleEntry, 1, 0, 1, 1)
 
 	grid.Attach(gtk.NewLabel("Text:"), 0, 2, 1, 1)
-	textEntry := gtk.NewEntry()
-	grid.Attach(textEntry, 1, 2, 1, 1)
+	textView := gtk.NewTextView()
+	textView.SetWrapMode(gtk.WrapWord)
+	textView.SetVExpand(true)
+	scroll := gtk.NewScrolledWindow()
+	scroll.SetChild(textView)
+	scroll.SetMinContentHeight(200)
+	scroll.SetMinContentWidth(400)
+	grid.Attach(scroll, 1, 2, 1, 1)
 
 	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
 	dialog.AddButton("Save", int(gtk.ResponseAccept))
 
 	dialog.ConnectResponse(func(responseID int) {
 		if responseID == int(gtk.ResponseAccept) {
-			err := client.AddNote(titleEntry.Text(), textEntry.Text())
+			buffer := textView.Buffer()
+			start, end := buffer.Bounds()
+			text := buffer.Text(start, end, false)
+			err := client.AddNote(titleEntry.Text(), text)
 			if err != nil {
 				log.Printf("Error saving note: %v\n", err)
 			} else {
@@ -252,18 +261,27 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 	grid.Attach(titleEntry, 1, 0, 1, 1)
 
 	grid.Attach(gtk.NewLabel("Description:"), 0, 2, 1, 1)
-	descriptionEntry := gtk.NewEntry()
-	grid.Attach(descriptionEntry, 1, 2, 1, 1)
+	textView := gtk.NewTextView()
+	textView.SetWrapMode(gtk.WrapWord)
+	textView.SetVExpand(true)
+	scroll := gtk.NewScrolledWindow()
+	scroll.SetChild(textView)
+	scroll.SetMinContentHeight(200)
+	scroll.SetMinContentWidth(400)
+	grid.Attach(scroll, 1, 2, 1, 1)
 
 	titleEntry.SetText(link.Title)
-	descriptionEntry.SetText(link.Description)
+	textView.Buffer().SetText(link.Description)
 
 	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
 	dialog.AddButton("Save", int(gtk.ResponseAccept))
 
 	dialog.ConnectResponse(func(responseID int) {
 		if responseID == int(gtk.ResponseAccept) {
-			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), descriptionEntry.Text())
+			buffer := textView.Buffer()
+			start, end := buffer.Bounds()
+			description := buffer.Text(start, end, false)
+			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), description)
 			if err != nil {
 				log.Printf("Error saving item: %v\n", err)
 			} else {
