@@ -79,7 +79,7 @@ func activate(app *gtk.Application) {
 		}
 
 		for _, link := range links {
-			linkRow := createLinkRow(&window.Window, link, refreshList)
+			linkRow := createItemRow(&window.Window, link, refreshList)
 			listView.Append(linkRow)
 		}
 	}
@@ -97,7 +97,7 @@ func activate(app *gtk.Application) {
 	window.Show()
 }
 
-func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
+func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	row := gtk.NewBox(gtk.OrientationHorizontal, 12)
 	row.SetMarginTop(6)
 	row.SetMarginBottom(6)
@@ -114,9 +114,9 @@ func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	titleLabel.SetMarkup(fmt.Sprintf("<b>%s</b>", link.Title))
 	textVBox.Append(titleLabel)
 
-	urlLabel := gtk.NewLabel(link.URL)
-	urlLabel.SetHAlign(gtk.AlignStart)
 	if link.URL != "" && !link.IsNote() {
+		urlLabel := gtk.NewLabel(link.URL)
+		urlLabel.SetHAlign(gtk.AlignStart)
 		urlLabel.SetMarkup(fmt.Sprintf("<a href=\"%s\">%s</a>", link.URL, link.URL))
 		clickGesture := gtk.NewGestureClick()
 		row.AddController(clickGesture)
@@ -126,8 +126,8 @@ func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 				log.Printf("Error opening link %s: %v\n", link.URL, err)
 			}
 		})
+		textVBox.Append(urlLabel)
 	}
-	textVBox.Append(urlLabel)
 
 	editButton := gtk.NewButtonWithLabel("Edit")
 	editButton.ConnectClicked(func() {
