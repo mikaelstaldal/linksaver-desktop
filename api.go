@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,10 @@ type Item struct {
 	Title       string    `json:"Title"`
 	Description string    `json:"Description,omitempty"`
 	AddedAt     time.Time `json:"AddedAt,omitempty"`
+}
+
+func (i Item) IsNote() bool {
+	return strings.HasPrefix(i.URL, "note:")
 }
 
 type APIClient struct {

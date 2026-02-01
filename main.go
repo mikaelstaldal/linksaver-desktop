@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 
@@ -62,7 +63,7 @@ func activate(app *gtk.Application) {
 		searchTerm := searchEntry.Text()
 		links, err := client.GetItems(searchTerm)
 		if err != nil {
-			fmt.Printf("Error fetching items: %v\n", err)
+			log.Printf("Error fetching items: %v\n", err)
 			return
 		}
 
@@ -112,6 +113,17 @@ func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 
 	urlLabel := gtk.NewLabel(link.URL)
 	urlLabel.SetHAlign(gtk.AlignStart)
+	if link.URL != "" && !link.IsNote() {
+		urlLabel.SetMarkup(fmt.Sprintf("<a href=\"%s\">%s</a>", link.URL, link.URL))
+		clickGesture := gtk.NewGestureClick()
+		row.AddController(clickGesture)
+		clickGesture.ConnectReleased(func(n int, x, y float64) {
+			err := gio.AppInfoLaunchDefaultForURI(link.URL, nil)
+			if err != nil {
+				log.Printf("Error opening link %s: %v\n", link.URL, err)
+			}
+		})
+	}
 	textVBox.Append(urlLabel)
 
 	editButton := gtk.NewButtonWithLabel("Edit")
@@ -123,7 +135,7 @@ func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	deleteButton := gtk.NewButtonWithLabel("Delete")
 	deleteButton.ConnectClicked(func() {
 		if err := client.DeleteItem(strconv.FormatInt(link.ID, 10)); err != nil {
-			fmt.Printf("Error deleting item: %v\n", err)
+			log.Printf("Error deleting item: %v\n", err)
 		} else {
 			onUpdate()
 		}
@@ -161,7 +173,7 @@ func newLinkDialog(parent *gtk.Window, onSuccess func()) {
 		if responseID == int(gtk.ResponseAccept) {
 			err := client.AddLink(urlEntry.Text())
 			if err != nil {
-				fmt.Printf("Error saving link: %v\n", err)
+				log.Printf("Error saving link: %v\n", err)
 			} else {
 				onSuccess()
 			}
@@ -204,7 +216,7 @@ func addNoteDialog(parent *gtk.Window, onSuccess func()) {
 		if responseID == int(gtk.ResponseAccept) {
 			err := client.AddNote(titleEntry.Text(), textEntry.Text())
 			if err != nil {
-				fmt.Printf("Error saving note: %v\n", err)
+				log.Printf("Error saving note: %v\n", err)
 			} else {
 				onSuccess()
 			}
@@ -250,7 +262,7 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 		if responseID == int(gtk.ResponseAccept) {
 			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), descriptionEntry.Text())
 			if err != nil {
-				fmt.Printf("Error saving item: %v\n", err)
+				log.Printf("Error saving item: %v\n", err)
 			} else {
 				onSuccess()
 			}
