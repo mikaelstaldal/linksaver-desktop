@@ -11,13 +11,16 @@ import (
 )
 
 var client *APIClient
+var config *Config
 
 func main() {
-	client = NewAPIClient(
-		getEnv("LINKSAVER_URL", "http://localhost:8080"),
-		os.Getenv("LINKSAVER_USERNAME"),
-		os.Getenv("LINKSAVER_PASSWORD"),
-	)
+	var err error
+	config, err = LoadConfig()
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+
+	client = NewAPIClient(config.BaseURL, config.Username, config.Password)
 
 	app := gtk.NewApplication("com.github.mikaelstaldal.linksaver-desktop", gio.ApplicationFlagsNone)
 	app.ConnectActivate(func() { activate(app) })
@@ -51,9 +54,11 @@ func activate(app *gtk.Application) {
 	addLinkButton := gtk.NewButtonWithLabel("Add Link")
 	addNoteButton := gtk.NewButtonWithLabel("Add Note")
 	refreshButton := gtk.NewButtonWithLabel("Refresh")
+	settingsButton := gtk.NewButtonWithLabel("Settings")
 	headerBox.Append(addLinkButton)
 	headerBox.Append(addNoteButton)
 	headerBox.Append(refreshButton)
+	headerBox.Append(settingsButton)
 
 	// Scrollable list area
 	scrolled := gtk.NewScrolledWindow()
@@ -96,6 +101,12 @@ func activate(app *gtk.Application) {
 		addNoteDialog(&window.Window, refreshList)
 	})
 	refreshButton.ConnectClicked(refreshList)
+	settingsButton.ConnectClicked(func() {
+		showSettingsDialog(&window.Window, func() {
+			client = NewAPIClient(config.BaseURL, config.Username, config.Password)
+			refreshList()
+		})
+	})
 
 	refreshList()
 	window.Show()
@@ -307,9 +318,56 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 	dialog.Show()
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
+func showSettingsDialog(parent *gtk.Window, onSuccess func()) {
+	dialog := gtk.NewDialog()
+	dialog.SetTransientFor(parent)
+	dialog.SetModal(true)
+	dialog.SetTitle("Settings")
+
+	contentArea := dialog.ContentArea()
+	contentArea.SetMarginTop(12)
+	contentArea.SetMarginBottom(12)
+	contentArea.SetMarginStart(12)
+	contentArea.SetMarginEnd(12)
+
+	grid := gtk.NewGrid()
+	grid.SetRowSpacing(6)
+	grid.SetColumnSpacing(12)
+	contentArea.Append(grid)
+
+	grid.Attach(gtk.NewLabel("API URL:"), 0, 0, 1, 1)
+	urlEntry := gtk.NewEntry()
+	urlEntry.SetText(config.BaseURL)
+	urlEntry.SetHExpand(true)
+	grid.Attach(urlEntry, 1, 0, 1, 1)
+
+	grid.Attach(gtk.NewLabel("Username:"), 0, 1, 1, 1)
+	usernameEntry := gtk.NewEntry()
+	usernameEntry.SetText(config.Username)
+	grid.Attach(usernameEntry, 1, 1, 1, 1)
+
+	grid.Attach(gtk.NewLabel("Password:"), 0, 2, 1, 1)
+	passwordEntry := gtk.NewEntry()
+	passwordEntry.SetVisibility(false)
+	passwordEntry.SetText(config.Password)
+	grid.Attach(passwordEntry, 1, 2, 1, 1)
+
+	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
+	dialog.AddButton("Save", int(gtk.ResponseAccept))
+
+	dialog.ConnectResponse(func(responseID int) {
+		if responseID == int(gtk.ResponseAccept) {
+			config.BaseURL = urlEntry.Text()
+			config.Username = usernameEntry.Text()
+			config.Password = passwordEntry.Text()
+			if err := config.Save(); err != nil {
+				log.Printf("Error saving config: %v\n", err)
+			} else {
+				onSuccess()
+			}
+		}
+		dialog.Destroy()
+	})
+
+	dialog.Show()
 }
