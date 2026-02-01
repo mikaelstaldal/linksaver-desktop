@@ -38,7 +38,7 @@ On the first run, go to **Settings** to configure your API endpoint and credenti
 ### AppArmor
 
 You can use the `apparmor-profile` file as a template for an Apparmor profile, you need to substitute 
-`${PATH_TO_EXECUTABLE}` with absolute paths. This has only been tested on Ubuntu and Debian Linux.
+`${PATH_TO_EXECUTABLE}` with absolute paths. This has only been tested on Ubuntu Linux.
 
 ## Development
 
