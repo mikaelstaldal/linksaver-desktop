@@ -24,12 +24,17 @@ func (i Item) IsNote() bool {
 }
 
 type APIClient struct {
-	baseURL string
-	client  *http.Client
+	baseURL  string
+	username string
+	password string
+	client   *http.Client
 }
 
-func NewAPIClient(baseURL string) *APIClient {
-	return &APIClient{baseURL: baseURL,
+func NewAPIClient(baseURL string, username string, password string) *APIClient {
+	return &APIClient{
+		baseURL:  baseURL,
+		username: username,
+		password: password,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
@@ -50,6 +55,9 @@ func (c *APIClient) GetItems(searchTerm string) ([]Item, error) {
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -76,6 +84,9 @@ func (c *APIClient) GetItem(id string) (*Item, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", c.baseURL, id), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -107,6 +118,9 @@ func (c *APIClient) AddLink(newUrl string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -133,6 +147,9 @@ func (c *APIClient) AddNote(title string, text string) error {
 	req, err := http.NewRequest("POST", c.baseURL+"/", bytes.NewBufferString(data))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
+	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -161,6 +178,9 @@ func (c *APIClient) UpdateItem(id string, title string, description string) erro
 	if err != nil {
 		return err
 	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -182,6 +202,9 @@ func (c *APIClient) DeleteItem(id string) error {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/%s", c.baseURL, id), nil)
 	if err != nil {
 		return err
+	}
+	if c.username != "" || c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {

@@ -13,7 +13,11 @@ import (
 var client *APIClient
 
 func main() {
-	client = NewAPIClient("http://localhost:8080") // Default URL can be made configurable
+	client = NewAPIClient(
+		getEnv("LINKSAVER_URL", "http://localhost:8080"),
+		os.Getenv("LINKSAVER_USERNAME"),
+		os.Getenv("LINKSAVER_PASSWORD"),
+	)
 
 	app := gtk.NewApplication("com.github.mikaelstaldal.linksaver-desktop", gio.ApplicationFlagsNone)
 	app.ConnectActivate(func() { activate(app) })
@@ -301,4 +305,11 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 	})
 
 	dialog.Show()
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
