@@ -35,6 +35,11 @@ After building, you can run the application:
 
 On the first run, go to **Settings** to configure your API endpoint and credentials. Settings are stored in your user configuration directory (e.g., `~/.config/linksaver/settings.json` on Linux).
 
+### AppArmor
+
+You can use the `apparmor-profile` file as a template for an Apparmor profile, you need to substitute 
+`${PATH_TO_EXECUTABLE}` with absolute paths. This has only been tested on Ubuntu and Debian Linux.
+
 ## Development
 
 ### Dependencies
