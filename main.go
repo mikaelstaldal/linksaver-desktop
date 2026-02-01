@@ -1,0 +1,262 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/diamondburned/gotk4/pkg/gio/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+)
+
+var client *APIClient
+
+func main() {
+	client = NewAPIClient("http://localhost:8080") // Default URL can be made configurable
+
+	app := gtk.NewApplication("com.github.mikaelstaldal.linksaver-desktop", gio.ApplicationFlagsNone)
+	app.ConnectActivate(func() { activate(app) })
+
+	if code := app.Run(os.Args); code > 0 {
+		os.Exit(code)
+	}
+}
+
+func activate(app *gtk.Application) {
+	window := gtk.NewApplicationWindow(app)
+	window.SetTitle("Link Saver")
+	window.SetDefaultSize(800, 600)
+
+	mainBox := gtk.NewBox(gtk.OrientationVertical, 6)
+	window.SetChild(mainBox)
+
+	// Header bar with the Search and Add button
+	headerBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	headerBox.SetMarginTop(6)
+	headerBox.SetMarginBottom(6)
+	headerBox.SetMarginStart(6)
+	headerBox.SetMarginEnd(6)
+	mainBox.Append(headerBox)
+
+	searchEntry := gtk.NewEntry()
+	searchEntry.SetPlaceholderText("Search...")
+	searchEntry.SetHExpand(true)
+	headerBox.Append(searchEntry)
+
+	addLinkButton := gtk.NewButtonWithLabel("Add Link")
+	addNoteButton := gtk.NewButtonWithLabel("Add Note")
+	headerBox.Append(addLinkButton)
+	headerBox.Append(addNoteButton)
+
+	// Scrollable list area
+	scrolled := gtk.NewScrolledWindow()
+	scrolled.SetVExpand(true)
+	mainBox.Append(scrolled)
+
+	listView := gtk.NewListBox()
+	listView.SetSelectionMode(gtk.SelectionNone)
+	scrolled.SetChild(listView)
+
+	var refreshList func()
+	refreshList = func() {
+		searchTerm := searchEntry.Text()
+		links, err := client.GetItems(searchTerm)
+		if err != nil {
+			fmt.Printf("Error fetching items: %v\n", err)
+			return
+		}
+
+		// Clear existing rows
+		for {
+			child := listView.FirstChild()
+			if child == nil {
+				break
+			}
+			listView.Remove(child)
+		}
+
+		for _, link := range links {
+			linkRow := createLinkRow(&window.Window, link, refreshList)
+			listView.Append(linkRow)
+		}
+	}
+
+	searchEntry.ConnectChanged(refreshList)
+	addLinkButton.ConnectClicked(func() {
+		newLinkDialog(&window.Window, refreshList)
+	})
+	addNoteButton.ConnectClicked(func() {
+		addNoteDialog(&window.Window, refreshList)
+	})
+
+	refreshList()
+	window.Show()
+}
+
+func createLinkRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
+	row := gtk.NewBox(gtk.OrientationHorizontal, 12)
+	row.SetMarginTop(6)
+	row.SetMarginBottom(6)
+	row.SetMarginStart(12)
+	row.SetMarginEnd(12)
+
+	textVBox := gtk.NewBox(gtk.OrientationVertical, 2)
+	textVBox.SetHExpand(true)
+	row.Append(textVBox)
+
+	titleLabel := gtk.NewLabel(link.Title)
+	titleLabel.SetHAlign(gtk.AlignStart)
+	// Make title bold
+	titleLabel.SetMarkup(fmt.Sprintf("<b>%s</b>", link.Title))
+	textVBox.Append(titleLabel)
+
+	urlLabel := gtk.NewLabel(link.URL)
+	urlLabel.SetHAlign(gtk.AlignStart)
+	textVBox.Append(urlLabel)
+
+	editButton := gtk.NewButtonWithLabel("Edit")
+	editButton.ConnectClicked(func() {
+		showEditDialog(parent, link, onUpdate)
+	})
+	row.Append(editButton)
+
+	deleteButton := gtk.NewButtonWithLabel("Delete")
+	deleteButton.ConnectClicked(func() {
+		if err := client.DeleteItem(strconv.FormatInt(link.ID, 10)); err != nil {
+			fmt.Printf("Error deleting item: %v\n", err)
+		} else {
+			onUpdate()
+		}
+	})
+	row.Append(deleteButton)
+
+	return row
+}
+
+func newLinkDialog(parent *gtk.Window, onSuccess func()) {
+	dialog := gtk.NewDialog()
+	dialog.SetTransientFor(parent)
+	dialog.SetModal(true)
+	dialog.SetTitle("Add New Link")
+
+	contentArea := dialog.ContentArea()
+	contentArea.SetMarginTop(12)
+	contentArea.SetMarginBottom(12)
+	contentArea.SetMarginStart(12)
+	contentArea.SetMarginEnd(12)
+
+	grid := gtk.NewGrid()
+	grid.SetRowSpacing(6)
+	grid.SetColumnSpacing(12)
+	contentArea.Append(grid)
+
+	grid.Attach(gtk.NewLabel("URL:"), 0, 1, 1, 1)
+	urlEntry := gtk.NewEntry()
+	grid.Attach(urlEntry, 1, 1, 1, 1)
+
+	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
+	dialog.AddButton("Save", int(gtk.ResponseAccept))
+
+	dialog.ConnectResponse(func(responseID int) {
+		if responseID == int(gtk.ResponseAccept) {
+			err := client.AddLink(urlEntry.Text())
+			if err != nil {
+				fmt.Printf("Error saving link: %v\n", err)
+			} else {
+				onSuccess()
+			}
+		}
+		dialog.Destroy()
+	})
+
+	dialog.Show()
+}
+
+func addNoteDialog(parent *gtk.Window, onSuccess func()) {
+	dialog := gtk.NewDialog()
+	dialog.SetTransientFor(parent)
+	dialog.SetModal(true)
+	dialog.SetTitle("Add New Note")
+
+	contentArea := dialog.ContentArea()
+	contentArea.SetMarginTop(12)
+	contentArea.SetMarginBottom(12)
+	contentArea.SetMarginStart(12)
+	contentArea.SetMarginEnd(12)
+
+	grid := gtk.NewGrid()
+	grid.SetRowSpacing(6)
+	grid.SetColumnSpacing(12)
+	contentArea.Append(grid)
+
+	grid.Attach(gtk.NewLabel("Title:"), 0, 0, 1, 1)
+	titleEntry := gtk.NewEntry()
+	grid.Attach(titleEntry, 1, 0, 1, 1)
+
+	grid.Attach(gtk.NewLabel("Text:"), 0, 2, 1, 1)
+	textEntry := gtk.NewEntry()
+	grid.Attach(textEntry, 1, 2, 1, 1)
+
+	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
+	dialog.AddButton("Save", int(gtk.ResponseAccept))
+
+	dialog.ConnectResponse(func(responseID int) {
+		if responseID == int(gtk.ResponseAccept) {
+			err := client.AddNote(titleEntry.Text(), textEntry.Text())
+			if err != nil {
+				fmt.Printf("Error saving note: %v\n", err)
+			} else {
+				onSuccess()
+			}
+		}
+		dialog.Destroy()
+	})
+
+	dialog.Show()
+}
+
+func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
+	dialog := gtk.NewDialog()
+	dialog.SetTransientFor(parent)
+	dialog.SetModal(true)
+	dialog.SetTitle("Edit Item")
+
+	contentArea := dialog.ContentArea()
+	contentArea.SetMarginTop(12)
+	contentArea.SetMarginBottom(12)
+	contentArea.SetMarginStart(12)
+	contentArea.SetMarginEnd(12)
+
+	grid := gtk.NewGrid()
+	grid.SetRowSpacing(6)
+	grid.SetColumnSpacing(12)
+	contentArea.Append(grid)
+
+	grid.Attach(gtk.NewLabel("Title:"), 0, 0, 1, 1)
+	titleEntry := gtk.NewEntry()
+	grid.Attach(titleEntry, 1, 0, 1, 1)
+
+	grid.Attach(gtk.NewLabel("Description:"), 0, 2, 1, 1)
+	descriptionEntry := gtk.NewEntry()
+	grid.Attach(descriptionEntry, 1, 2, 1, 1)
+
+	titleEntry.SetText(link.Title)
+	descriptionEntry.SetText(link.Description)
+
+	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
+	dialog.AddButton("Save", int(gtk.ResponseAccept))
+
+	dialog.ConnectResponse(func(responseID int) {
+		if responseID == int(gtk.ResponseAccept) {
+			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), descriptionEntry.Text())
+			if err != nil {
+				fmt.Printf("Error saving item: %v\n", err)
+			} else {
+				onSuccess()
+			}
+		}
+		dialog.Destroy()
+	})
+
+	dialog.Show()
+}
