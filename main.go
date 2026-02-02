@@ -11,6 +11,7 @@ import (
 	"github.com/diamondburned/gotk4/pkg/gdk/v4"
 	"github.com/diamondburned/gotk4/pkg/gio/v2"
 	"github.com/diamondburned/gotk4/pkg/gtk/v4"
+	"github.com/diamondburned/gotk4/pkg/pango"
 )
 
 var client *APIClient
@@ -151,6 +152,7 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	row.SetMarginBottom(6)
 	row.SetMarginStart(12)
 	row.SetMarginEnd(12)
+	row.SetHExpand(true)
 
 	textVBox := gtk.NewBox(gtk.OrientationVertical, 2)
 	textVBox.SetHExpand(true)
@@ -158,6 +160,8 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 
 	titleLabel := gtk.NewLabel(link.Title)
 	titleLabel.SetHAlign(gtk.AlignStart)
+	titleLabel.SetEllipsize(pango.EllipsizeEnd)
+	titleLabel.SetSingleLineMode(true)
 	// Make title bold
 	titleLabel.SetMarkup(fmt.Sprintf("<b>%s</b>", link.Title))
 	textVBox.Append(titleLabel)
@@ -165,6 +169,8 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	if link.URL != "" && !link.IsNote() {
 		urlLabel := gtk.NewLabel(link.URL)
 		urlLabel.SetHAlign(gtk.AlignStart)
+		urlLabel.SetEllipsize(pango.EllipsizeEnd)
+		urlLabel.SetSingleLineMode(true)
 		urlLabel.SetMarkup(fmt.Sprintf("<a href=\"%s\">%s</a>", link.URL, link.URL))
 		clickGesture := gtk.NewGestureClick()
 		row.AddController(clickGesture)
@@ -184,12 +190,16 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 		textVBox.Append(descriptionLabel)
 	}
 
+	buttonBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	buttonBox.SetHAlign(gtk.AlignEnd)
+	row.Append(buttonBox)
+
 	editButton := gtk.NewButtonWithLabel("Edit")
 	editButton.SetVAlign(gtk.AlignCenter)
 	editButton.ConnectClicked(func() {
 		showEditDialog(parent, link, onUpdate)
 	})
-	row.Append(editButton)
+	buttonBox.Append(editButton)
 
 	deleteButton := gtk.NewButtonWithLabel("Delete")
 	deleteButton.SetVAlign(gtk.AlignCenter)
@@ -200,7 +210,7 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 			onUpdate()
 		}
 	})
-	row.Append(deleteButton)
+	buttonBox.Append(deleteButton)
 
 	return row
 }
