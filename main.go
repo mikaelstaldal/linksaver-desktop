@@ -10,6 +10,7 @@ import (
 	coreglib "github.com/diamondburned/gotk4/pkg/core/glib"
 	"github.com/diamondburned/gotk4/pkg/gdk/v4"
 	"github.com/diamondburned/gotk4/pkg/gio/v2"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
 	"github.com/diamondburned/gotk4/pkg/gtk/v4"
 	"github.com/diamondburned/gotk4/pkg/pango"
 )
@@ -78,7 +79,7 @@ func activate(app *gtk.Application) {
 		searchTerm := searchEntry.Text()
 		links, err := client.GetItems(searchTerm)
 		if err != nil {
-			log.Printf("Error fetching items: %v\n", err)
+			showErrorDialog(&window.Window, "Error fetching items", err.Error())
 			return
 		}
 
@@ -135,7 +136,7 @@ func activate(app *gtk.Application) {
 			return false
 		}
 		if err := client.AddLink(candidate); err != nil {
-			log.Printf("Error adding link via drag and drop: %v\n", err)
+			showErrorDialog(&window.Window, "Error adding link via drag and drop", err.Error())
 			return false
 		}
 		refreshList()
@@ -177,7 +178,7 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 		clickGesture.ConnectReleased(func(n int, x, y float64) {
 			err := gio.AppInfoLaunchDefaultForURI(link.URL, nil)
 			if err != nil {
-				log.Printf("Error opening link %s: %v\n", link.URL, err)
+				showErrorDialog(parent, "Error opening link", fmt.Sprintf("URL: %s\n%v", link.URL, err))
 			}
 		})
 		textVBox.Append(urlLabel)
@@ -205,7 +206,7 @@ func createItemRow(parent *gtk.Window, link Item, onUpdate func()) *gtk.Box {
 	deleteButton.SetVAlign(gtk.AlignCenter)
 	deleteButton.ConnectClicked(func() {
 		if err := client.DeleteItem(strconv.FormatInt(link.ID, 10)); err != nil {
-			log.Printf("Error deleting item: %v\n", err)
+			showErrorDialog(parent, "Error deleting item", err.Error())
 		} else {
 			onUpdate()
 		}
@@ -243,7 +244,7 @@ func newLinkDialog(parent *gtk.Window, onSuccess func()) {
 		if responseID == int(gtk.ResponseAccept) {
 			err := client.AddLink(urlEntry.Text())
 			if err != nil {
-				log.Printf("Error saving link: %v\n", err)
+				showErrorDialog(parent, "Error saving link", err.Error())
 			} else {
 				onSuccess()
 			}
@@ -295,7 +296,7 @@ func addNoteDialog(parent *gtk.Window, onSuccess func()) {
 			text := buffer.Text(start, end, false)
 			err := client.AddNote(titleEntry.Text(), text)
 			if err != nil {
-				log.Printf("Error saving note: %v\n", err)
+				showErrorDialog(parent, "Error saving note", err.Error())
 			} else {
 				onSuccess()
 			}
@@ -350,7 +351,7 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 			description := buffer.Text(start, end, false)
 			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), description)
 			if err != nil {
-				log.Printf("Error saving item: %v\n", err)
+				showErrorDialog(parent, "Error saving item", err.Error())
 			} else {
 				onSuccess()
 			}
@@ -404,7 +405,7 @@ func showSettingsDialog(parent *gtk.Window, onSuccess func()) {
 			config.Username = usernameEntry.Text()
 			config.Password = passwordEntry.Text()
 			if err := config.Save(); err != nil {
-				log.Printf("Error saving config: %v\n", err)
+				showErrorDialog(parent, "Error saving config", err.Error())
 			} else {
 				onSuccess()
 			}
@@ -412,5 +413,15 @@ func showSettingsDialog(parent *gtk.Window, onSuccess func()) {
 		dialog.Destroy()
 	})
 
+	dialog.Show()
+}
+
+func showErrorDialog(parent *gtk.Window, title, message string) {
+	dialog := gtk.NewMessageDialog(parent, gtk.DialogModal, gtk.MessageError, gtk.ButtonsClose)
+	dialog.SetTitle(title)
+	dialog.SetMarkup(glib.MarkupEscapeText(message))
+	dialog.ConnectResponse(func(responseID int) {
+		dialog.Destroy()
+	})
 	dialog.Show()
 }
