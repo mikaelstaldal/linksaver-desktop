@@ -235,22 +235,32 @@ func newLinkDialog(parent *gtk.Window, onSuccess func()) {
 
 	grid.Attach(gtk.NewLabel("URL:"), 0, 1, 1, 1)
 	urlEntry := gtk.NewEntry()
+	urlEntry.SetMaxLength(2000)
+	urlEntry.SetWidthChars(50)
 	grid.Attach(urlEntry, 1, 1, 1, 1)
 
-	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
-	dialog.AddButton("Save", int(gtk.ResponseAccept))
+	buttonBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	buttonBox.SetHAlign(gtk.AlignEnd)
+	buttonBox.SetMarginTop(12)
+	contentArea.Append(buttonBox)
 
-	dialog.ConnectResponse(func(responseID int) {
-		if responseID == int(gtk.ResponseAccept) {
-			err := client.AddLink(urlEntry.Text())
-			if err != nil {
-				showErrorDialog(parent, "Error saving link", err.Error())
-			} else {
-				onSuccess()
-			}
+	cancelButton := gtk.NewButtonWithLabel("Cancel")
+	cancelButton.ConnectClicked(func() {
+		dialog.Destroy()
+	})
+	buttonBox.Append(cancelButton)
+
+	saveButton := gtk.NewButtonWithLabel("Save")
+	saveButton.ConnectClicked(func() {
+		err := client.AddLink(urlEntry.Text())
+		if err != nil {
+			showErrorDialog(parent, "Error saving link", err.Error())
+		} else {
+			onSuccess()
 		}
 		dialog.Destroy()
 	})
+	buttonBox.Append(saveButton)
 
 	dialog.Show()
 }
@@ -274,6 +284,7 @@ func addNoteDialog(parent *gtk.Window, onSuccess func()) {
 
 	grid.Attach(gtk.NewLabel("Title:"), 0, 0, 1, 1)
 	titleEntry := gtk.NewEntry()
+	titleEntry.SetMaxLength(250)
 	grid.Attach(titleEntry, 1, 0, 1, 1)
 
 	grid.Attach(gtk.NewLabel("Text:"), 0, 2, 1, 1)
@@ -286,23 +297,31 @@ func addNoteDialog(parent *gtk.Window, onSuccess func()) {
 	scroll.SetMinContentWidth(400)
 	grid.Attach(scroll, 1, 2, 1, 1)
 
-	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
-	dialog.AddButton("Save", int(gtk.ResponseAccept))
+	buttonBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	buttonBox.SetHAlign(gtk.AlignEnd)
+	buttonBox.SetMarginTop(12)
+	contentArea.Append(buttonBox)
 
-	dialog.ConnectResponse(func(responseID int) {
-		if responseID == int(gtk.ResponseAccept) {
-			buffer := textView.Buffer()
-			start, end := buffer.Bounds()
-			text := buffer.Text(start, end, false)
-			err := client.AddNote(titleEntry.Text(), text)
-			if err != nil {
-				showErrorDialog(parent, "Error saving note", err.Error())
-			} else {
-				onSuccess()
-			}
+	cancelButton := gtk.NewButtonWithLabel("Cancel")
+	cancelButton.ConnectClicked(func() {
+		dialog.Destroy()
+	})
+	buttonBox.Append(cancelButton)
+
+	saveButton := gtk.NewButtonWithLabel("Save")
+	saveButton.ConnectClicked(func() {
+		buffer := textView.Buffer()
+		start, end := buffer.Bounds()
+		text := buffer.Text(start, end, false)
+		err := client.AddNote(titleEntry.Text(), text)
+		if err != nil {
+			showErrorDialog(parent, "Error saving note", err.Error())
+		} else {
+			onSuccess()
 		}
 		dialog.Destroy()
 	})
+	buttonBox.Append(saveButton)
 
 	dialog.Show()
 }
@@ -326,6 +345,7 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 
 	grid.Attach(gtk.NewLabel("Title:"), 0, 0, 1, 1)
 	titleEntry := gtk.NewEntry()
+	titleEntry.SetMaxLength(250)
 	grid.Attach(titleEntry, 1, 0, 1, 1)
 
 	grid.Attach(gtk.NewLabel("Description:"), 0, 2, 1, 1)
@@ -341,23 +361,31 @@ func showEditDialog(parent *gtk.Window, link Item, onSuccess func()) {
 	titleEntry.SetText(link.Title)
 	textView.Buffer().SetText(link.Description)
 
-	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
-	dialog.AddButton("Save", int(gtk.ResponseAccept))
+	buttonBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	buttonBox.SetHAlign(gtk.AlignEnd)
+	buttonBox.SetMarginTop(12)
+	contentArea.Append(buttonBox)
 
-	dialog.ConnectResponse(func(responseID int) {
-		if responseID == int(gtk.ResponseAccept) {
-			buffer := textView.Buffer()
-			start, end := buffer.Bounds()
-			description := buffer.Text(start, end, false)
-			err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), description)
-			if err != nil {
-				showErrorDialog(parent, "Error saving item", err.Error())
-			} else {
-				onSuccess()
-			}
+	cancelButton := gtk.NewButtonWithLabel("Cancel")
+	cancelButton.ConnectClicked(func() {
+		dialog.Destroy()
+	})
+	buttonBox.Append(cancelButton)
+
+	saveButton := gtk.NewButtonWithLabel("Save")
+	saveButton.ConnectClicked(func() {
+		buffer := textView.Buffer()
+		start, end := buffer.Bounds()
+		description := buffer.Text(start, end, false)
+		err := client.UpdateItem(strconv.FormatInt(link.ID, 10), titleEntry.Text(), description)
+		if err != nil {
+			showErrorDialog(parent, "Error saving item", err.Error())
+		} else {
+			onSuccess()
 		}
 		dialog.Destroy()
 	})
+	buttonBox.Append(saveButton)
 
 	dialog.Show()
 }
@@ -381,6 +409,7 @@ func showSettingsDialog(parent *gtk.Window, onSuccess func()) {
 
 	grid.Attach(gtk.NewLabel("API URL:"), 0, 0, 1, 1)
 	urlEntry := gtk.NewEntry()
+	urlEntry.SetMaxLength(2000)
 	urlEntry.SetText(config.BaseURL)
 	urlEntry.SetHExpand(true)
 	grid.Attach(urlEntry, 1, 0, 1, 1)
@@ -396,22 +425,30 @@ func showSettingsDialog(parent *gtk.Window, onSuccess func()) {
 	passwordEntry.SetText(config.Password)
 	grid.Attach(passwordEntry, 1, 2, 1, 1)
 
-	dialog.AddButton("Cancel", int(gtk.ResponseCancel))
-	dialog.AddButton("Save", int(gtk.ResponseAccept))
+	buttonBox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+	buttonBox.SetHAlign(gtk.AlignEnd)
+	buttonBox.SetMarginTop(12)
+	contentArea.Append(buttonBox)
 
-	dialog.ConnectResponse(func(responseID int) {
-		if responseID == int(gtk.ResponseAccept) {
-			config.BaseURL = urlEntry.Text()
-			config.Username = usernameEntry.Text()
-			config.Password = passwordEntry.Text()
-			if err := config.Save(); err != nil {
-				showErrorDialog(parent, "Error saving config", err.Error())
-			} else {
-				onSuccess()
-			}
+	cancelButton := gtk.NewButtonWithLabel("Cancel")
+	cancelButton.ConnectClicked(func() {
+		dialog.Destroy()
+	})
+	buttonBox.Append(cancelButton)
+
+	saveButton := gtk.NewButtonWithLabel("Save")
+	saveButton.ConnectClicked(func() {
+		config.BaseURL = urlEntry.Text()
+		config.Username = usernameEntry.Text()
+		config.Password = passwordEntry.Text()
+		if err := config.Save(); err != nil {
+			showErrorDialog(parent, "Error saving config", err.Error())
+		} else {
+			onSuccess()
 		}
 		dialog.Destroy()
 	})
+	buttonBox.Append(saveButton)
 
 	dialog.Show()
 }
