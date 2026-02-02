@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Link Saver
+Icon=linksaver.svg
+Exec=linksaver-desktop
+Terminal=false
+StartupNotify=true
