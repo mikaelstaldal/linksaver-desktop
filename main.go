@@ -5,7 +5,10 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
+	coreglib "github.com/diamondburned/gotk4/pkg/core/glib"
+	"github.com/diamondburned/gotk4/pkg/gdk/v4"
 	"github.com/diamondburned/gotk4/pkg/gio/v2"
 	"github.com/diamondburned/gotk4/pkg/gtk/v4"
 )
@@ -109,6 +112,36 @@ func activate(app *gtk.Application) {
 	})
 
 	refreshList()
+
+	// Drag and Drop support: accept dropped text/URIs
+	dropTarget := gtk.NewDropTarget(coreglib.TypeString, gdk.ActionCopy)
+	dropTarget.ConnectDrop(func(value *coreglib.Value, x, y float64) bool {
+		text := value.String()
+		// text may be a raw URL or a text/uri-list (newline separated, may include comments starting with '#')
+		var candidate string
+		for _, line := range strings.Split(text, "\n") {
+			l := strings.TrimSpace(line)
+			if l == "" || strings.HasPrefix(l, "#") {
+				continue
+			}
+			candidate = l
+			break
+		}
+		if candidate == "" {
+			candidate = strings.TrimSpace(text)
+		}
+		if candidate == "" {
+			return false
+		}
+		if err := client.AddLink(candidate); err != nil {
+			log.Printf("Error adding link via drag and drop: %v\n", err)
+			return false
+		}
+		refreshList()
+		return true
+	})
+	window.AddController(dropTarget)
+
 	window.Show()
 }
 
