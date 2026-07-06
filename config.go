@@ -17,7 +17,7 @@ func LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	configPath := filepath.Join(configDir, "linksaver", "settings.json")
+	configPath := filepath.Join(configDir, "mylinks", "settings.json")
 
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
@@ -46,7 +46,7 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-	dirPath := filepath.Join(configDir, "linksaver")
+	dirPath := filepath.Join(configDir, "mylinks")
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return err
 	}

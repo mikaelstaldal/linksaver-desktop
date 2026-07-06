@@ -1,13 +1,13 @@
 #include <tunables/global>
 
-profile linksaver-desktop ${PATH_TO_EXECUTABLE}/linksaver-desktop {
+profile mylinks-desktop ${PATH_TO_EXECUTABLE}/mylinks-desktop {
 	#include <abstractions/gnome>
 	#include <abstractions/nameservice>
 	#include <abstractions/dbus-session>
 
-	${PATH_TO_EXECUTABLE}/linksaver-desktop r,
+	${PATH_TO_EXECUTABLE}/mylinks-desktop r,
 	
-	owner @{HOME}/.config/linksaver/* rw,
+	owner @{HOME}/.config/mylinks/* rw,
 
     owner @{PROC}/@{pid}/** r,
     /{,snap/core/[0-9]*/,snap/snapd/[0-9]*/}usr/bin/snap mrCx -> snap_browsers,

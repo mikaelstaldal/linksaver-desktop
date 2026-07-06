@@ -1,6 +1,6 @@
-# Link Saver Desktop
+# MyLinks Desktop
 
-A desktop client for [Link Saver](https://github.com/mikaelstaldal/linksaver), built with Go and GTK4.
+A desktop client for [MyLinks](https://github.com/mikaelstaldal/mylinks), built with Go and GTK4.
 
 ## Features
 
@@ -22,7 +22,7 @@ A desktop client for [Link Saver](https://github.com/mikaelstaldal/linksaver), b
 To build the application, run:
 
 ```bash
-go build -o linksaver-desktop .
+go build -o mylinks-desktop .
 ```
 
 ## Usage
@@ -30,10 +30,10 @@ go build -o linksaver-desktop .
 After building, you can run the application:
 
 ```bash
-./linksaver-desktop
+./mylinks-desktop
 ```
 
-On the first run, go to **Settings** to configure your API endpoint and credentials. Settings are stored in your user configuration directory (e.g., `~/.config/linksaver/settings.json` on Linux).
+On the first run, go to **Settings** to configure your API endpoint and credentials. Settings are stored in your user configuration directory (e.g., `~/.config/mylinks/settings.json` on Linux).
 
 ### AppArmor
 

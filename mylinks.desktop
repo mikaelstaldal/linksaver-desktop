@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MyLinks
+Icon=mylinks.svg
+Exec=mylinks-desktop
+Terminal=false
+StartupNotify=true

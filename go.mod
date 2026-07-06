@@ -1,4 +1,4 @@
-module linksaver-desktop
+module mylinks-desktop
 
 go 1.25
 

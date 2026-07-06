@@ -27,7 +27,7 @@ func main() {
 
 	client = NewAPIClient(config.BaseURL, config.Username, config.Password)
 
-	app := gtk.NewApplication("com.github.mikaelstaldal.linksaver-desktop", gio.ApplicationFlagsNone)
+	app := gtk.NewApplication("com.github.mikaelstaldal.mylinks-desktop", gio.ApplicationFlagsNone)
 	app.ConnectActivate(func() { activate(app) })
 
 	if code := app.Run(os.Args); code > 0 {
@@ -37,7 +37,7 @@ func main() {
 
 func activate(app *gtk.Application) {
 	window := gtk.NewApplicationWindow(app)
-	window.SetTitle("Link Saver")
+	window.SetTitle("MyLinks")
 	window.SetDefaultSize(800, 600)
 
 	mainBox := gtk.NewBox(gtk.OrientationVertical, 6)
